@@ -26,10 +26,21 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please add a password'],
       minLength: 6,
     },
-    playlists: {
-      type: Array,
-      required: false,
-    },
+    playlists: [
+      {
+        name: {
+          type: String,
+          trim: true,
+          required: [true, 'Please add a playlist name'],
+        },
+        songs: [
+          {
+            type: mongoose.Schema.ObjectId,
+            ref: 'Song',
+          },
+        ],
+      },
+    ],
     role: {
       type: String,
       required: true,

@@ -30,7 +30,9 @@ exports.signin = asyncHandler(async (req, res, next) => {
   // Check for user
   const user = await User.findOne({
     email,
-  }).select('+password');
+  })
+    .populate('playlists.songs')
+    .select('+password');
   if (!user) {
     return next(new ErrorResponse('Invalid Credentials', 401));
   }
@@ -52,7 +54,7 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 
 // Get Token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
-  const { _id, name, email, role } = user;
+  const { _id, name, email, role, playlists } = user;
   // Create token
   const token = user.getSignedJwtToken();
 
@@ -74,5 +76,6 @@ const sendTokenResponse = (user, statusCode, res) => {
     name,
     email,
     role,
+    playlists,
   });
 };
