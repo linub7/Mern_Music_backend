@@ -21,8 +21,9 @@ const songSchema = new mongoose.Schema(
       required: true,
     },
     src: {
-      type: String,
-      required: true,
+      type: Object,
+      url: String,
+      public_id: String,
     },
     duration: {
       type: String,

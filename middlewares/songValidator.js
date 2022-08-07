@@ -8,7 +8,6 @@ exports.addSongValidators = [
     .withMessage('Please Provide an artist'),
   check('album').trim().not().isEmpty().withMessage('Please Provide an album'),
   check('year').trim().not().isEmpty().withMessage('Please Provide a year'),
-  check('src').trim().not().isEmpty().withMessage('Please Provide a src'),
   check('duration')
     .trim()
     .not()

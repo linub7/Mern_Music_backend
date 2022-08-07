@@ -3,10 +3,14 @@ const asyncHandler = require('../middlewares/async');
 const ErrorResponse = require('../utils/errorResponse');
 const { validationResult } = require('express-validator');
 const Song = require('../models/song');
+const {
+  uploadSongToCloudinary,
+  destroySongFromCloudinary,
+} = require('../utils/uploadSong');
 
 exports.addSong = asyncHandler(async (req, res, next) => {
   const {
-    body: { title, artist, src, album, year, duration },
+    body: { title, artist, album, year, duration },
   } = req;
 
   const errors = validationResult(req);
@@ -14,18 +18,67 @@ exports.addSong = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const song = await Song.create({
+  const song = new Song({
     title,
     artist,
-    src,
     album,
     year,
     duration,
   });
 
+  const { url, public_id } = await uploadSongToCloudinary(req.file?.path);
+  song.src = { url, public_id };
+
+  await song.save();
+
   res.status(201).json({
     success: true,
     song,
+  });
+});
+
+exports.updateSingleSong = asyncHandler(async (req, res, next) => {
+  const {
+    params: { songId },
+    body: { title, artist, album, year, duration },
+  } = req;
+
+  const song = await Song.findById(songId);
+
+  if (!song) {
+    return next(new ErrorResponse(`Song not found with id of ${songId}`, 404));
+  }
+
+  song.title = title ? title : song.title;
+  song.artist = artist ? artist : song.artist;
+  song.album = album ? album : song.album;
+  song.year = year ? year : song.year;
+  song.duration = duration ? duration : song.duration;
+
+  if (req.file) {
+    const { url, public_id } = await uploadSongToCloudinary(req.file?.path);
+    song.src = { url, public_id };
+  }
+
+  await song.save();
+
+  const users = await User.find({ 'playlists.songs': songId });
+
+  users.forEach(async (user) => {
+    const playlist = user.playlists.find((playlist) =>
+      playlist.songs.includes(songId)
+    );
+    const songIndex = playlist.songs.findIndex((song) => song === songId);
+    playlist.songs[songIndex] = song;
+    await user.save();
+  });
+
+  const songs = await Song.find({});
+
+  res.status(200).json({
+    success: true,
+    song,
+    songs,
   });
 });
 
